@@ -5,8 +5,8 @@
  * @format
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 interface PostData {
   userId: number;
@@ -16,63 +16,69 @@ interface PostData {
 
 const App = () => {
   const [data, setData] = useState<PostData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+      const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
 
-        const jsonData = await response.json();
-        setData(jsonData);
-      } catch (error) {
-        setError(error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
-    fetchData();
-  }, []);
+      const jsonData = await response.json();
+      setData(jsonData);
+    } catch (error) {
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error.message || 'An unknown error occurred.'}</Text>
-      </View>
-    );
-  }
-
-  if (!data) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Data not available.</Text>
-      </View>
-    );
-  }
+  const clearData = () => {
+    setData(null);
+  };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>Post Details</Text>
+      </View>
+
       <View style={styles.detailsContainer}>
-        <Text style={styles.label}>User ID:</Text>
-        <Text style={styles.value}>{data.userId}</Text>
-        <Text style={styles.label}>Title:</Text>
-        <Text style={[styles.value, styles.titleText]}>{data.title}</Text>
-        <Text style={styles.label}>Body:</Text>
-        <Text style={styles.value}>{data.body}</Text>
+        <TouchableOpacity
+          style={[styles.button, loading || data ? styles.buttonDisabled : null]}
+          onPress={fetchData}
+          disabled={loading || data !== null} // Set disabled to true when loading or when data is not null
+        >
+          <Text style={styles.buttonText}>{loading ? 'Fetching Data...' : data ? 'Data Fetched' : 'Fetch Data'}</Text>
+        </TouchableOpacity>
+
+        {loading && <ActivityIndicator size="large" color="#0000ff" style={styles.activityIndicator} />}
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{`Error: ${error.message || 'An unknown error occurred.'}`}</Text>
+          </View>
+        )}
+
+        {data && (
+          <>
+            <Text style={styles.label}>User ID:</Text>
+            <Text style={styles.value}>{data.userId}</Text>
+            <Text style={styles.label}>Title:</Text>
+            <Text style={[styles.value, styles.titleText]}>{data.title}</Text>
+            <Text style={styles.label}>Body:</Text>
+            <Text style={styles.value}>{data.body}</Text>
+
+            <TouchableOpacity style={styles.clearButton} onPress={clearData}>
+              <Text style={styles.buttonText}>Clear Data</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -80,11 +86,55 @@ const App = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
+    justifyContent: 'center',
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   detailsContainer: {
     marginTop: 16,
+  },
+  button: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#7f8c8d',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  activityIndicator: {
+    marginTop: 16,
+  },
+  errorContainer: {
+    marginTop: 16,
+    backgroundColor: '#e74c3c',
+    padding: 10,
+    borderRadius: 5,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  noDataContainer: {
+    marginTop: 16,
+  },
+  noDataText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
   label: {
     fontWeight: 'bold',
@@ -98,13 +148,18 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 16,
     marginBottom: 16,
+    fontStyle: 'italic',
   },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    textAlign: 'center',
+  clearButton: {
+    backgroundColor: '#e74c3c',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 16,
+    alignItems: 'center',
   },
 });
 
 export default App;
+
+
 
